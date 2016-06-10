@@ -1,0 +1,4 @@
+*~
+/plugin/composer.phar
+/plugin/vendor
+/plugin/composer.lock
