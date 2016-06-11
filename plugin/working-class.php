@@ -32,7 +32,7 @@ class Autoloader
 $dirname = dirname(__FILE__);
 spl_autoload_register(new Autoloader($dirname . DIRECTORY_SEPARATOR . 'lib'));
 spl_autoload_register(new Autoloader($dirname . DIRECTORY_SEPARATOR . 'classes'));
-require_once($dirname . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'autoload.php');
+require_once($dirname . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'autoload.php');
 
 if (class_exists('WP_CLI')) {
 	require_once('wp-cli.php');

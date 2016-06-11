@@ -4,10 +4,6 @@ namespace WorkingClass\Property;
 
 class Tel extends Property
 {
-	function __construct($classname)
-	{
-		Property::__construct($classname);
-	}
 	function renderForm($indent, $value = null)
 	{
 		$sp = str_repeat(' ', $indent);

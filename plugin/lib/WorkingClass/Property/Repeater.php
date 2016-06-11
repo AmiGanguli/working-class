@@ -8,7 +8,7 @@ class Repeater extends Property
 	public $max_repeat = 0;
 	public $child = null;
 
-	static function parse($name, $type)
+	static function parse($type, $name, $parent = null)
 	{
 		$repeater = null;
 		if (
@@ -19,7 +19,7 @@ class Repeater extends Property
 			)
 		) {
 			$type = $matches[1];
-			$repeater = new Repeater($name);
+			$repeater = new Repeater(static::class, $name, $parent);
 			if ($matches[2]) {
 				$repeater->min_repeat = $matches[2];
 			}
@@ -29,6 +29,14 @@ class Repeater extends Property
 		}
 		return [$repeater, $type];
 	}
+
+	public function jsonSerialize()
+	{
+		$ret = parent::jsonSerialize();
+		$ret['child'] = $this->child;
+		return $ret;
+	}
+
 	function renderForm($indent, $value = null)
 	{
 		$sp = str_repeat(' ', $indent);
@@ -38,5 +46,13 @@ class Repeater extends Property
 			. $sp . '  >' . "\n"
 			. $child->renderForm($indent + 2)
 			. $sp . '</div>';
+	}
+
+	function checkRecursion($classname)
+	{
+		if ($this->min_repeat == 0) {
+			return false;
+		}
+		return parent::checkRecursion($classname);
 	}
 }

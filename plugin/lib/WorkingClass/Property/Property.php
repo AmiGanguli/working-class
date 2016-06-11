@@ -23,6 +23,11 @@ class Property extends \WorkingClass\Definition
 		'week'		=> Week::class,
 	];
 
+	static function parse($classname, $name, $parent = null)
+	{
+		return new $classname($classname, $name, $parent);
+	}
+
 	public function renderElementAttributes($indent, $attributes)
 	{
 		$ret = '';
@@ -45,42 +50,63 @@ class Property extends \WorkingClass\Definition
 		return $indent . 'value="' . htmlspecialchars($value) . '"';
 	}
 
-	static function parseDocProp($docprop)
+	static function parseDocProp($docprop, $parent = null)
 	{
 		$comment = $docprop->getDocComment();
 		$name = $docprop->getName();
+
+		// DocBlock comments are required.
+		//
 		if (!$comment) {
 			throw new \Exception("Parsing $name: missing docblock");
 		}
+
 		$docblock = (\WorkingClass\Definition::docBlockFactory())->create($comment);
 		$vars = $docblock->getTagsByName('var');
+
+		// There must be exactly one @var tag.
+		//
 		if (count($vars) == 0) {
 			throw new \Exception("Parsing $name: missing @var");
 		}
 		if (count($vars) > 1) {
 			throw new \Exception("Parsing $name: only one @var allowed");
 		}
+
+		// The name of the property given in the @var must match
+		// the name of the property in the code.
+		//
 		list($type, $var_name, $description) = preg_split("/\s+/", $vars[0], 3);
 		$var_name = substr($var_name, 1);
 		if ($var_name != $name) {
 			throw new \Exception("Parsing $name: @var must match property name($var_name != $name)");
 		}
-		list($repeater, $type) = Repeater::parse($name, $type);
+
+		// Give the repeater class a shot at this property.  If it's
+		// not a repeater, the parser will return null.
+		//
+		list($property, $type) = Repeater::parse($type, $name, $this);
+
+		// Map the builtin types to the corresponding classes.
+		//
 		if (isset(static::$builtins[$type])) {
 			$type = static::$builtins[$type];
 		}
-		/** !!!!! We need to instantiate the property with the type Name
-		    so that, if this is a complex object, we recurse and parse the child
-		    object.  Also need to catch recursive types somewhere.
-		    */
-//		$property = new $type($name);
-//		$property->parseDescription($docblock);
-//		$property->parseAttributes($docblok);
 
-		if ($repeater) {
-			$repeater->child = $property;
-			$property = $repeater;
+		if (method_exists($type, 'parse')) {
+			$definition_type = $type;
+		} else {
+			$definition_type = '\WorkingClass\Block';
 		}
+
+		if ($property) {
+			$property->child = $definition_type;
+		} else {
+			$property = $definition_type::parse($type, $name, $parent);
+		}
+		$property->parseDescription($docblock);
+		$property->parseAttributes($docblock);
+
 		return $property;
 	}
 }
